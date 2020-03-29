@@ -11,10 +11,13 @@
 #include "diffusion1d_output.h"
 #include "diffusion1d_timestep.h"
 #include "parameters.h"
+#include <omp.h>
+#include <iostream>
 
 // the main function drives the simulation
 int main(int argc, char *argv[]) 
 {
+  
   // Simulation parameters
   double      L;  // system length
   double      D;  // diffusion constant
@@ -35,6 +38,8 @@ int main(int argc, char *argv[])
   const int N = int(L/dx + 0.5);         // number of grid points
   const int outputEvery = int(time_between_output/dt + 0.5); // how many steps between output
   const int outputcols = 48;             // number of columns for sparkline output
+  int tid;                               // thead id for the parallel parts of the code
+  int numthreads;                        // total number of activated threads
   
   // Allocate density data 
   rvector<double> P(N);
@@ -53,20 +58,31 @@ int main(int argc, char *argv[])
   // Initial output
   diffusion1d_output(file, 0, time, P, outputcols);
 
+// "Forking" the threads for parallel processing
+#pragma omp parallel private(tid) shared(numthreads)    
+{ 
+  numthreads = omp_get_num_threads();                   // gets the total number of activated threads
+  tid = omp_get_thread_num();                           // gets the id of each thread
+  
   // Time evolution
   for (int step = 1; step <= numSteps; step++) {
 
     // Compute next time point
     diffusion1d_timestep(P, D, dt, dx);
 
+    // This section needs to be done only by only one (master) to avoid any duplication
+    #pragma omp master                                   
+    {
     // Update time
     time += dt;
 
     // Periodically add data to the file
     if (step % outputEvery == 0 and step > 0) 
         diffusion1d_output(file, step, time, P, outputcols);
+    }
+
   }
-  
+}  
   // Close file
   diffusion1d_output_finish(file);
 

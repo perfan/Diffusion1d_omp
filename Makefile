@@ -6,6 +6,7 @@
 CXX=g++
 CXXFLAGS=-O3 -g -march=native -std=c++14
 LDFLAGS=-g
+OMPFLAGS=-fopenmp
 LD=${CXX}
 
 .PHONY: all clean distclean run 
@@ -17,10 +18,10 @@ help: Makefile
 
 ##  diffusion1d: build diffusion1d executable
 diffusion1d: diffusion1d.o diffusion1d_timestep.o diffusion1d_output.o parameters.o ticktock.o sparkline.o
-	${LD} ${LDFLAGS} -o diffusion1d diffusion1d.o diffusion1d_timestep.o diffusion1d_output.o parameters.o ticktock.o sparkline.o ${LDLIBS}
+	${LD} ${LDFLAGS} -o diffusion1d diffusion1d.o diffusion1d_timestep.o diffusion1d_output.o parameters.o ticktock.o sparkline.o ${LDLIBS} ${OMPFLAGS}
 
 diffusion1d.o: diffusion1d.cc diffusion1d_timestep.h
-	${CXX} ${CXXFLAGS} -c -o diffusion1d.o diffusion1d.cc
+	${CXX} ${CXXFLAGS} -c -o diffusion1d.o diffusion1d.cc ${OMPFLAGS}
 
 parameters.o: parameters.cc parameters.h
 	${CXX} ${CXXFLAGS} -c -o parameters.o parameters.cc
@@ -29,7 +30,7 @@ diffusion1d_output.o: diffusion1d_output.cc diffusion1d_output.h
 	${CXX} ${CXXFLAGS} -c -o diffusion1d_output.o diffusion1d_output.cc
 
 diffusion1d_timestep.o: diffusion1d_timestep.cc diffusion1d_timestep.h
-	${CXX} ${CXXFLAGS} -c -o diffusion1d_timestep.o diffusion1d_timestep.cc
+	${CXX} ${CXXFLAGS} -c -o diffusion1d_timestep.o diffusion1d_timestep.cc ${OMPFLAGS}
 
 ticktock.o: ticktock.cc ticktock.h sparkline.h
 	${CXX} ${CXXFLAGS} -c -o ticktock.o ticktock.cc
@@ -47,6 +48,10 @@ distclean: clean
 
 ##  run: execute diffusion1d with parameters in params.ini
 run: diffusion1d params.ini
+	./diffusion1d params.ini
+
+parallel_run: diffusion1d params.ini
+	export OMP_NUM_THREADS=2
 	./diffusion1d params.ini
 
 ##  doc: use doxygen to generate documentation in latex/refman.pdf
