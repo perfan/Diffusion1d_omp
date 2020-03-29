@@ -50,6 +50,7 @@ distclean: clean
 run: diffusion1d params.ini
 	./diffusion1d params.ini
 
+##  run: execute parallel diffusion1d with parameters in params.ini
 parallel_run: diffusion1d params.ini
 	export OMP_NUM_THREADS=2
 	./diffusion1d params.ini
